@@ -1,0 +1,37 @@
+name: Auto Tag on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latesttag
+        run: echo "::set-output name=tag::$(git describe --tags `git rev-list --tags --max-count=1`)"
+
+      - name: Calculate new tag
+        id: newtag
+        run: |
+          LATEST_TAG=${{ steps.latesttag.outputs.tag }}
+          BASE="${LATEST_TAG%.*}"
+          INCREMENT="${LATEST_TAG##*.}"
+          NEW_TAG="$BASE.$((INCREMENT+1))"
+          echo "New tag: $NEW_TAG"
+          echo "::set-output name=new_tag::$NEW_TAG"
+
+      - name: Create new tag
+        run: |
+          NEW_TAG=${{ steps.newtag.outputs.new_tag }}
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag $NEW_TAG
+          git push https://${{ secrets.PAT_LAVIEENGO_SECRET }}@github.com/ahmad-alkadri/LaVieEnGo.git $NEW_TAG
