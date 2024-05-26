@@ -22,6 +22,8 @@ func main() {
 	}()
 
 	MaxX, MaxY := 70, 18
+	delayCactus := 350
+	delayPteranodon := 1200
 	baseY := MaxY - 2
 	spriteDinoY := baseY
 	groundSpeed := 1
@@ -40,7 +42,11 @@ func main() {
 	// Cactus sprite
 	var cactuses sprites.SpriteCactuses
 
-	spawnCactusTicker := time.NewTicker(time.Duration(rand.Intn(1000)+350) * time.Millisecond)
+	// Ptearnodons sprite
+	var pteranodons sprites.SpritePteranodons
+
+	spawnCactusTicker := time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+	spawnPteraTicker := time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
 
 	// Initialize the ground
 	var ground sprites.SpriteGround
@@ -62,13 +68,14 @@ loop:
 				for i := 0; i <= 2*T; i++ {
 					spriteDinoY -= displacements[i]
 					scenes.RenderGame(&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
-						&dino, &ground, &cactuses,
+						&dino, &ground, &cactuses, &pteranodons,
 						&scores, gameOverChan)
 					clash := scenes.AreClashing(&MaxY, &spriteDinoY,
-						&dino, &cactuses)
+						&dino, &cactuses, &pteranodons)
 					if clash {
 						break loop
 					}
+					// Check score based on passed cactuses
 					diff, deltaX, _ := cactuses.Update()
 					if diff > 0 {
 						if deltaX == 4 {
@@ -78,6 +85,12 @@ loop:
 							scores.Add(2)
 						}
 					}
+					// Check score based on passed pteranodons
+					diffP, _, _ := pteranodons.Update()
+					if diffP > 0 {
+						scores.Add(1)
+					}
+					// Time sleep before next frame
 					time.Sleep(15 * time.Millisecond)
 				}
 			}
@@ -86,26 +99,39 @@ loop:
 			newCactus.Init(MaxX, groundSpeed)
 			cactuses.Add(newCactus)
 			// Reset ticker
-			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+350) * time.Millisecond)
+			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+		case <-spawnPteraTicker.C:
+			var newPtera sprites.SpritePteranodon
+			newPtera.Init(MaxX, 2*groundSpeed, 2)
+			pteranodons.Add(newPtera)
+			// Reset ticker
+			spawnPteraTicker.Reset(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
 		default:
 			scenes.RenderGame(
 				&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
-				&dino, &ground, &cactuses,
+				&dino, &ground, &cactuses, &pteranodons,
 				&scores, gameOverChan)
 			clash := scenes.AreClashing(&MaxY, &spriteDinoY,
-				&dino, &cactuses)
+				&dino, &cactuses, &pteranodons)
 			if clash {
 				break loop
 			}
+			// Check score based on passed cactuses
 			diff, deltaX, _ := cactuses.Update()
 			if diff > 0 {
-				if deltaX == 5 {
+				if deltaX == 4 {
 					scores.Add(1)
 				}
-				if deltaX == 11 {
+				if deltaX == 10 {
 					scores.Add(2)
 				}
 			}
+			// Check score based on passed pteranodons
+			diffP, _, _ := pteranodons.Update()
+			if diffP > 0 {
+				scores.Add(1)
+			}
+			// Time sleep before next frame
 			time.Sleep(15 * time.Millisecond)
 		}
 	}
