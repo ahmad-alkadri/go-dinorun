@@ -23,46 +23,32 @@ func main() {
 	}()
 	var (
 		MaxX, MaxY          int           = 70, 18
-		delayCactus         int           = 1000
-		delayPteranodon     int           = 2400
+		delayCactus         int           = 350
+		delayPteranodon     int           = 700
 		baseY               int           = MaxY - 2
 		spriteDinoY         int           = baseY
 		groundSpeed         int           = 1
 		gameSpeed           time.Duration = 15
-		delayBetweenEnemies int           = 10
+		delayBetweenEnemies int           = 20
 		jumpChan            chan bool     = make(chan bool)
 		exitChan            chan bool     = make(chan bool)
 		gameOverChan        chan bool     = make(chan bool)
+		dino                sprites.SpriteDino
+		cactuses            sprites.SpriteCactuses
+		pteranodons         sprites.SpritePteranodons
+		ground              sprites.SpriteGround
+		spawnCactusTicker   *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+		spawnPteraTicker    *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
+		frameDist           int          = 100
+		scores              game.GameScores
+		mu                  sync.Mutex
 	)
+
+	dino.Init(30)
+	ground.Init(&MaxX)
+	scores.Init()
 
 	go game.HandleInput(jumpChan, exitChan, gameOverChan)
-
-	// Dino sprite
-	var dino sprites.SpriteDino
-	dino.Init(30)
-
-	// Cactus sprite
-	var cactuses sprites.SpriteCactuses
-
-	// Ptearnodons sprite
-	var pteranodons sprites.SpritePteranodons
-
-	var (
-		spawnCactusTicker *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
-		spawnPteraTicker  *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
-	)
-
-	// Initialize the ground
-	var ground sprites.SpriteGround
-	ground.Init(&MaxX)
-
-	var (
-		// Initialize scores
-		scores game.GameScores
-		// Distance between enemies
-		frameDist int = 100
-		mu        sync.Mutex
-	)
 
 loop:
 	for {
@@ -82,24 +68,11 @@ loop:
 					clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 						&dino, &cactuses, &pteranodons)
 					if clash {
+						scores.Stop()
 						break loop
 					}
-					// Check score based on passed cactuses
-					diff, deltaX, _ := cactuses.Update()
-					if diff > 0 {
-						if deltaX == 4 {
-							scores.Add(1)
-						}
-						if deltaX == 10 {
-							scores.Add(2)
-						}
-					}
-					// Check score based on passed pteranodons
-					diffP, _, _ := pteranodons.Update()
-					if diffP > 0 {
-						scores.Add(1)
-					}
-					// Add framediff
+					cactuses.Update()
+					pteranodons.Update()
 					frameDist += 1
 					// Time sleep before next frame
 					time.Sleep(gameSpeed * time.Millisecond)
@@ -135,24 +108,11 @@ loop:
 			clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 				&dino, &cactuses, &pteranodons)
 			if clash {
+				scores.Stop()
 				break loop
 			}
-			// Check score based on passed cactuses
-			diff, deltaX, _ := cactuses.Update()
-			if diff > 0 {
-				if deltaX == 4 {
-					scores.Add(1)
-				}
-				if deltaX == 10 {
-					scores.Add(2)
-				}
-			}
-			// Check score based on passed pteranodons
-			diffP, _, _ := pteranodons.Update()
-			if diffP > 0 {
-				scores.Add(1)
-			}
-			// Add framediff
+			cactuses.Update()
+			pteranodons.Update()
 			frameDist += 1
 			// Time sleep before next frame
 			time.Sleep(gameSpeed * time.Millisecond)

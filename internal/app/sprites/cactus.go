@@ -1,7 +1,6 @@
 package sprites
 
 import (
-	"math"
 	"math/rand"
 )
 
@@ -38,21 +37,15 @@ type SpriteCactuses struct {
 	Group []SpriteCactus
 }
 
-func (scacts *SpriteCactuses) Update() (diff, deltaX, deltaY int) {
+func (scacts *SpriteCactuses) Update() {
 	var activeCactuses []SpriteCactus
-	var disappearingCactus SpriteCactus
 	for _, cactus := range scacts.Group {
 		cactus.UpdatePosition()
 		if cactus.Xoffset > 0 { // Check if still on screen
 			activeCactuses = append(activeCactuses, cactus)
-		} else {
-			disappearingCactus = cactus
 		}
 	}
-	diff = int(math.Abs(float64(len(scacts.Group) - len(activeCactuses))))
 	scacts.Group = activeCactuses
-	deltaX, deltaY = disappearingCactus.SpanCells()
-	return
 }
 
 func (scacts *SpriteCactuses) Add(scact SpriteCactus) {
@@ -73,34 +66,6 @@ func (scact *SpriteCactus) Init(MaxX int, deltaXRate ...int) {
 	if len(deltaXRate) > 0 {
 		scact.deltaXRate = deltaXRate[0]
 	}
-}
-
-func (scact *SpriteCactus) SpanCells() (deltaX, deltaY int) {
-	// Initialize min and max values
-	var minX, minY int = math.MaxInt, math.MaxInt
-	var maxX, maxY int = math.MinInt, math.MinInt
-
-	// Iterate over the slice of maps and find min and max values
-	for y, innerMap := range scact.Graphic {
-		for x := range innerMap {
-			if x < minX {
-				minX = x
-			}
-			if x > maxX {
-				maxX = x
-			}
-			if y < minY {
-				minY = y
-			}
-			if y > maxY {
-				maxY = y
-			}
-		}
-	}
-	// fmt.Printf("%d, %d\n", maxX, minX)
-	deltaX = maxX - minX
-	deltaY = maxY - minY
-	return
 }
 
 func (scact *SpriteCactus) Render() map[int]map[int]rune {
