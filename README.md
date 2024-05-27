@@ -4,7 +4,7 @@ Go Dino Run is a terminal-based implementation of the famous
 [Chrome Dinosaur Game](https://en.wikipedia.org/wiki/Dinosaur_Game),
 written in Go.
 
-| ![demo](https://github.com/ahmad-alkadri/go-dinorun/assets/22837764/392c6d0d-1438-4a1e-8359-ab4750e6ba88) |
+| ![demo](https://github.com/ahmad-alkadri/go-dinorun/assets/22837764/8b63aeba-97b8-4c5c-82ae-fd7d34c0b161) |
 | --- |
 | *A little bit of demo of the game, played on terminal* |
 
