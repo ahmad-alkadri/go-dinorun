@@ -33,6 +33,7 @@ func (spteras *SpritePteranodons) Add(sptera SpritePteranodon) {
 type SpritePteranodon struct {
 	frameCount int
 	frameLimit int
+	halfLim    float32
 	Xoffset    int
 	Yoffset    int
 	Graphic    map[int]map[int]rune
@@ -48,6 +49,8 @@ func (sptera *SpritePteranodon) Init(MaxX int, deltaXRate int, frameLimit int) {
 	} else {
 		sptera.frameLimit = frameLimit
 	}
+	sptera.frameLimit = 30
+	sptera.halfLim = float32(frameLimit/2) - 1
 	sptera.Xoffset = MaxX
 	sptera.Yoffset = sptera.randomYoffset()
 	sptera.deltaXRate = deltaXRate
@@ -92,7 +95,7 @@ func (sptera *SpritePteranodon) increment() {
 	if sptera.frameCount == sptera.frameLimit {
 		sptera.resetFrameCount()
 	}
-	sptera.frameCount++
+	sptera.frameCount += 1
 	// Decide which graph to be put now
 	// Check its value
 	if sptera.firstHalfOrNot() {
@@ -112,23 +115,26 @@ func (sptera *SpritePteranodon) firstHalfOrNot() bool {
 }
 
 func (sptera *SpritePteranodon) Render() map[int]map[int]rune {
-	// Increase framecount
-	sptera.increment()
 	// Return the graphic
 	return sptera.Graphic
 }
 
 func (sptera *SpritePteranodon) UpdatePosition() {
+	// Increase framecount
+	sptera.increment()
 	sptera.Xoffset -= sptera.deltaXRate
 }
 
 func (sptera *SpritePteranodon) frame(i int) map[int]map[int]rune {
 	dinoSprite := [2]map[int]map[int]rune{
 		{
-			sptera.Yoffset: {0: '\u2580', 1: '\u2588', 2: '\u2588', 3: '\u2588', 4: '\u2588'},
+			sptera.Yoffset - 1: {0: '\u2597', 1: '\u2584', 3: '\u2588'},
+			sptera.Yoffset:     {0: '\u2580', 1: '\u2588', 2: '\u2588', 3: '\u2588', 4: '\u2588', 5: '\u2584'},
 		},
 		{
-			sptera.Yoffset: {0: '\u2580', 1: '\u2588', 2: '\u2588', 3: '\u2588', 4: '\u2588'},
+			sptera.Yoffset - 1: {0: '\u2597', 1: '\u2584'},
+			sptera.Yoffset:     {0: '\u2580', 1: '\u2588', 2: '\u2588', 3: '\u2588', 4: '\u2588', 5: '\u2584'},
+			sptera.Yoffset + 1: {3: '\u2580'},
 		},
 	}
 	return dinoSprite[i]

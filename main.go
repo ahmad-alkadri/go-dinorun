@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/ahmad-alkadri/go-dinorun/internal/app/game"
@@ -20,21 +21,22 @@ func main() {
 	defer func() {
 		_ = keyboard.Close()
 	}()
-
-	MaxX, MaxY := 70, 18
-	delayCactus := 350
-	delayPteranodon := 1200
-	baseY := MaxY - 2
-	spriteDinoY := baseY
-	groundSpeed := 1
-
-	jumpChan := make(chan bool)
-	exitChan := make(chan bool)
-	gameOverChan := make(chan bool)
+	var (
+		MaxX, MaxY          int           = 70, 18
+		delayCactus         int           = 1000
+		delayPteranodon     int           = 2400
+		baseY               int           = MaxY - 2
+		spriteDinoY         int           = baseY
+		groundSpeed         int           = 1
+		gameSpeed           time.Duration = 15
+		delayBetweenEnemies int           = 10
+		jumpChan            chan bool     = make(chan bool)
+		exitChan            chan bool     = make(chan bool)
+		gameOverChan        chan bool     = make(chan bool)
+	)
 
 	go game.HandleInput(jumpChan, exitChan, gameOverChan)
 
-	// INITIALIZING THE SPRITES
 	// Dino sprite
 	var dino sprites.SpriteDino
 	dino.Init(30)
@@ -45,15 +47,22 @@ func main() {
 	// Ptearnodons sprite
 	var pteranodons sprites.SpritePteranodons
 
-	spawnCactusTicker := time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
-	spawnPteraTicker := time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
+	var (
+		spawnCactusTicker *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+		spawnPteraTicker  *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
+	)
 
 	// Initialize the ground
 	var ground sprites.SpriteGround
 	ground.Init(&MaxX)
 
-	// Initialize scores
-	var scores game.GameScores
+	var (
+		// Initialize scores
+		scores game.GameScores
+		// Distance between enemies
+		frameDist int = 100
+		mu        sync.Mutex
+	)
 
 loop:
 	for {
@@ -90,20 +99,32 @@ loop:
 					if diffP > 0 {
 						scores.Add(1)
 					}
+					// Add framediff
+					frameDist += 1
 					// Time sleep before next frame
-					time.Sleep(15 * time.Millisecond)
+					time.Sleep(gameSpeed * time.Millisecond)
 				}
 			}
 		case <-spawnCactusTicker.C:
-			var newCactus sprites.SpriteCactus
-			newCactus.Init(MaxX, groundSpeed)
-			cactuses.Add(newCactus)
+			mu.Lock()
+			if frameDist > delayBetweenEnemies {
+				var newCactus sprites.SpriteCactus
+				newCactus.Init(MaxX, groundSpeed)
+				cactuses.Add(newCactus)
+				frameDist = 0
+			}
+			mu.Unlock()
 			// Reset ticker
 			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
 		case <-spawnPteraTicker.C:
-			var newPtera sprites.SpritePteranodon
-			newPtera.Init(MaxX, 2*groundSpeed, 2)
-			pteranodons.Add(newPtera)
+			mu.Lock()
+			if frameDist > delayBetweenEnemies {
+				var newPtera sprites.SpritePteranodon
+				newPtera.Init(MaxX, groundSpeed, 30)
+				pteranodons.Add(newPtera)
+				frameDist = 0
+			}
+			mu.Unlock()
 			// Reset ticker
 			spawnPteraTicker.Reset(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
 		default:
@@ -131,8 +152,10 @@ loop:
 			if diffP > 0 {
 				scores.Add(1)
 			}
+			// Add framediff
+			frameDist += 1
 			// Time sleep before next frame
-			time.Sleep(15 * time.Millisecond)
+			time.Sleep(gameSpeed * time.Millisecond)
 		}
 	}
 

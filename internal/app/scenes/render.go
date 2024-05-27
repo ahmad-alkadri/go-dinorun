@@ -23,8 +23,7 @@ func RenderGame(
 	}
 
 	// Print the dino sprite
-	dinoFig := dino.Render()
-	printSprite(5, *spriteDinoY, dinoFig, scene)
+	printSprite(5, *spriteDinoY, dino.Render(), scene)
 
 	// Print the ground as sprite
 	printSprite(0, *MaxY-1, ground.Render(*groundSpeed), scene)
