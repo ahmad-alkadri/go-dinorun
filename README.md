@@ -4,9 +4,9 @@ Go Dino Run is a terminal-based implementation of the famous
 [Chrome Dinosaur Game](https://en.wikipedia.org/wiki/Dinosaur_Game),
 written in Go.
 
-| ![demo](https://github.com/ahmad-alkadri/go-dinorun/assets/22837764/8b63aeba-97b8-4c5c-82ae-fd7d34c0b161) |
+| ![demo_dark](https://github.com/ahmad-alkadri/go-dinorun/assets/22837764/205a79c1-b214-44c7-a81e-bd8ddeb24214) |
 | --- |
-| *A little bit of demo of the game, played on terminal* |
+| *Game demo, played on terminal, recorded using [asciinema](https://github.com/asciinema)* |
 
 ## Installation
 
@@ -50,8 +50,8 @@ rm -f $(which go-dinorun)
 ## How to Play
 
 Go Dino Run is similar to the Chrome Dinosaur Game. 
-The T-Rex will keep running,
-and you need to avoid the cactuses by jumping over them.
+The T-Rex will keep running, and you need to avoid the cactuses and pteranodons
+by jumping over or ducking below them.
 
 - Open a terminal
 - Run `go-dinorun` (make sure the installation's successful)
@@ -63,7 +63,7 @@ Have fun and see how far you can run without hitting the obstacles!
 
 ## Future Plans
 
-- Adding pteronodons (flying dinosaur)
+- ~~Adding pteronodons (flying dinosaur)~~
 - Adding local database to save some highest scores
 
 Please do not hesitate to raise any issues if you have it, giving me
