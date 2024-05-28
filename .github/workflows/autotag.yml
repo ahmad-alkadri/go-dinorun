@@ -3,6 +3,7 @@ name: Auto Tag on PR Merge
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
 
 jobs:
   tag:
@@ -34,4 +35,4 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git tag $NEW_TAG
-          git push https://${{ secrets.PAT_LAVIEENGO_SECRET }}@github.com/ahmad-alkadri/LaVieEnGo.git $NEW_TAG
+          git push https://${{ secrets.PAT_GODINORUN }}@github.com/ahmad-alkadri/go-dinorun.git $NEW_TAG
