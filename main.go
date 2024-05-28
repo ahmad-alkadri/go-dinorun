@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/ahmad-alkadri/go-dinorun/internal/app/game"
@@ -20,34 +21,34 @@ func main() {
 	defer func() {
 		_ = keyboard.Close()
 	}()
+	var (
+		MaxX, MaxY          int           = 70, 18
+		delayCactus         int           = 350
+		delayPteranodon     int           = 700
+		baseY               int           = MaxY - 2
+		spriteDinoY         int           = baseY
+		groundSpeed         int           = 1
+		gameSpeed           time.Duration = 15
+		delayBetweenEnemies int           = 20
+		jumpChan            chan bool     = make(chan bool)
+		exitChan            chan bool     = make(chan bool)
+		gameOverChan        chan bool     = make(chan bool)
+		dino                sprites.SpriteDino
+		cactuses            sprites.SpriteCactuses
+		pteranodons         sprites.SpritePteranodons
+		ground              sprites.SpriteGround
+		spawnCactusTicker   *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+		spawnPteraTicker    *time.Ticker = time.NewTicker(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
+		frameDist           int          = 100
+		scores              game.GameScores
+		mu                  sync.Mutex
+	)
 
-	MaxX, MaxY := 70, 18
-	baseY := MaxY - 2
-	spriteDinoY := baseY
-	groundSpeed := 1
-
-	jumpChan := make(chan bool)
-	exitChan := make(chan bool)
-	gameOverChan := make(chan bool)
+	dino.Init(30)
+	ground.Init(&MaxX)
+	scores.Init()
 
 	go game.HandleInput(jumpChan, exitChan, gameOverChan)
-
-	// INITIALIZING THE SPRITES
-	// Dino sprite
-	var dino sprites.SpriteDino
-	dino.Init(30)
-
-	// Cactus sprite
-	var cactuses sprites.SpriteCactuses
-
-	spawnCactusTicker := time.NewTicker(time.Duration(rand.Intn(1000)+350) * time.Millisecond)
-
-	// Initialize the ground
-	var ground sprites.SpriteGround
-	ground.Init(&MaxX)
-
-	// Initialize scores
-	var scores game.GameScores
 
 loop:
 	for {
@@ -62,51 +63,59 @@ loop:
 				for i := 0; i <= 2*T; i++ {
 					spriteDinoY -= displacements[i]
 					scenes.RenderGame(&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
-						&dino, &ground, &cactuses,
+						&dino, &ground, &cactuses, &pteranodons,
 						&scores, gameOverChan)
 					clash := scenes.AreClashing(&MaxY, &spriteDinoY,
-						&dino, &cactuses)
+						&dino, &cactuses, &pteranodons)
 					if clash {
+						scores.Stop()
 						break loop
 					}
-					diff, deltaX, _ := cactuses.Update()
-					if diff > 0 {
-						if deltaX == 4 {
-							scores.Add(1)
-						}
-						if deltaX == 10 {
-							scores.Add(2)
-						}
-					}
-					time.Sleep(15 * time.Millisecond)
+					cactuses.Update()
+					pteranodons.Update()
+					frameDist += 1
+					// Time sleep before next frame
+					time.Sleep(gameSpeed * time.Millisecond)
 				}
 			}
 		case <-spawnCactusTicker.C:
-			var newCactus sprites.SpriteCactus
-			newCactus.Init(MaxX, groundSpeed)
-			cactuses.Add(newCactus)
+			mu.Lock()
+			if frameDist > delayBetweenEnemies {
+				var newCactus sprites.SpriteCactus
+				newCactus.Init(MaxX, groundSpeed)
+				cactuses.Add(newCactus)
+				frameDist = 0
+			}
+			mu.Unlock()
 			// Reset ticker
-			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+350) * time.Millisecond)
+			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
+		case <-spawnPteraTicker.C:
+			mu.Lock()
+			if frameDist > delayBetweenEnemies {
+				var newPtera sprites.SpritePteranodon
+				newPtera.Init(MaxX, groundSpeed, 30)
+				pteranodons.Add(newPtera)
+				frameDist = 0
+			}
+			mu.Unlock()
+			// Reset ticker
+			spawnPteraTicker.Reset(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
 		default:
 			scenes.RenderGame(
 				&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
-				&dino, &ground, &cactuses,
+				&dino, &ground, &cactuses, &pteranodons,
 				&scores, gameOverChan)
 			clash := scenes.AreClashing(&MaxY, &spriteDinoY,
-				&dino, &cactuses)
+				&dino, &cactuses, &pteranodons)
 			if clash {
+				scores.Stop()
 				break loop
 			}
-			diff, deltaX, _ := cactuses.Update()
-			if diff > 0 {
-				if deltaX == 5 {
-					scores.Add(1)
-				}
-				if deltaX == 11 {
-					scores.Add(2)
-				}
-			}
-			time.Sleep(15 * time.Millisecond)
+			cactuses.Update()
+			pteranodons.Update()
+			frameDist += 1
+			// Time sleep before next frame
+			time.Sleep(gameSpeed * time.Millisecond)
 		}
 	}
 

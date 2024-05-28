@@ -13,6 +13,7 @@ func RenderGame(
 	dino *sprites.SpriteDino,
 	ground *sprites.SpriteGround,
 	cactuses *sprites.SpriteCactuses,
+	pteranodons *sprites.SpritePteranodons,
 	scores *game.GameScores,
 	gameOverChan chan bool,
 ) {
@@ -22,8 +23,7 @@ func RenderGame(
 	}
 
 	// Print the dino sprite
-	dinoFig := dino.Render()
-	printSprite(5, *spriteDinoY, dinoFig, scene)
+	printSprite(5, *spriteDinoY, dino.Render(), scene)
 
 	// Print the ground as sprite
 	printSprite(0, *MaxY-1, ground.Render(*groundSpeed), scene)
@@ -32,6 +32,12 @@ func RenderGame(
 	for _, cactus := range cactuses.Group {
 		cactusXoffset := cactus.Xoffset
 		printSprite(cactusXoffset, *MaxY-1, cactus.Render(), scene)
+	}
+
+	// Print the pteranodons
+	for _, ptera := range pteranodons.Group {
+		pteraXoffset := ptera.Xoffset
+		printSprite(pteraXoffset, *MaxY-1, ptera.Render(), scene)
 	}
 
 	// Terminal screen update
@@ -48,13 +54,23 @@ func AreClashing(
 	MaxY, spriteDinoY *int,
 	dino *sprites.SpriteDino,
 	cactuses *sprites.SpriteCactuses,
+	pteranodons *sprites.SpritePteranodons,
 ) bool {
 	// Check if there's any clash
 	dinoCells := extractSpriteCells(5, *spriteDinoY, dino.Render())
 	var cactusCells [][2]int
+	var pteraCells [][2]int
+	// Clash with the cactus
 	for _, cactus := range cactuses.Group {
 		cactusCells = extractSpriteCells(cactus.Xoffset, *MaxY-1, cactus.Render())
 		if shareChild(dinoCells, cactusCells) {
+			return true
+		}
+	}
+	// Clash with the pteranodons
+	for _, ptera := range pteranodons.Group {
+		pteraCells = extractSpriteCells(ptera.Xoffset, *MaxY-1, ptera.Render())
+		if shareChild(dinoCells, pteraCells) {
 			return true
 		}
 	}
