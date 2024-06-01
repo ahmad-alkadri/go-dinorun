@@ -16,38 +16,51 @@ func RenderGame(
 	pteranodons *sprites.SpritePteranodons,
 	scores *game.GameScores,
 	gameOverChan chan bool,
+	sceneBuffer []string,
 ) {
-	scene := make([]string, *MaxY)
-	for i := range scene {
-		scene[i] = strings.Repeat(" ", *MaxX)
+	// Reuse the scene buffer to avoid reallocations
+	for i := range sceneBuffer {
+		sceneBuffer[i] = strings.Repeat(" ", *MaxX)
 	}
 
 	// Print the dino sprite
-	printSprite(5, *spriteDinoY, dino.Render(), scene)
+	printSprite(5, *spriteDinoY, dino.Render(), sceneBuffer)
 
 	// Print the ground as sprite
-	printSprite(0, *MaxY-1, ground.Render(*groundSpeed), scene)
+	printSprite(0, *MaxY-1, ground.Render(*groundSpeed), sceneBuffer)
 
 	// Print the cactuses
 	for _, cactus := range cactuses.Group {
 		cactusXoffset := cactus.Xoffset
-		printSprite(cactusXoffset, *MaxY-1, cactus.Render(), scene)
+		printSprite(cactusXoffset, *MaxY-1, cactus.Render(), sceneBuffer)
 	}
 
 	// Print the pteranodons
 	for _, ptera := range pteranodons.Group {
 		pteraXoffset := ptera.Xoffset
-		printSprite(pteraXoffset, *MaxY-1, ptera.Render(), scene)
+		printSprite(pteraXoffset, *MaxY-1, ptera.Render(), sceneBuffer)
 	}
 
 	// Terminal screen update
+	// Using a single write to avoid multiple I/O operations
 	var output strings.Builder
+	output.Grow((*MaxY + 2) * (*MaxX))         // Preallocate enough space
 	output.WriteString("\033[H\033[2J\033[3J") // Clear the screen
 	output.WriteString(fmt.Sprintf("Score: %d\n", scores.Print()))
-	for _, line := range scene {
-		output.WriteString(line + "\n")
+	for _, line := range sceneBuffer {
+		output.WriteString(line)
+		output.WriteByte('\n')
 	}
 	fmt.Print(output.String())
+}
+
+// Helper function to initialize the scene buffer
+func InitializeSceneBuffer(MaxY, MaxX int) []string {
+	sceneBuffer := make([]string, MaxY)
+	for i := range sceneBuffer {
+		sceneBuffer[i] = strings.Repeat(" ", MaxX)
+	}
+	return sceneBuffer
 }
 
 func AreClashing(

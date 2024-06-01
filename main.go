@@ -47,6 +47,7 @@ func main() {
 	dino.Init(30)
 	ground.Init(&MaxX)
 	scores.Init()
+	sceneBuffer := scenes.InitializeSceneBuffer(MaxY, MaxX)
 
 	go game.HandleInput(jumpChan, exitChan, gameOverChan)
 
@@ -64,7 +65,7 @@ loop:
 					spriteDinoY -= displacements[i]
 					scenes.RenderGame(&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
 						&dino, &ground, &cactuses, &pteranodons,
-						&scores, gameOverChan)
+						&scores, gameOverChan, sceneBuffer)
 					clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 						&dino, &cactuses, &pteranodons)
 					if clash {
@@ -104,7 +105,7 @@ loop:
 			scenes.RenderGame(
 				&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
 				&dino, &ground, &cactuses, &pteranodons,
-				&scores, gameOverChan)
+				&scores, gameOverChan, sceneBuffer)
 			clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 				&dino, &cactuses, &pteranodons)
 			if clash {
