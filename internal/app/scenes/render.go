@@ -15,7 +15,7 @@ func RenderGame(
 	cactuses *sprites.SpriteCactuses,
 	pteranodons *sprites.SpritePteranodons,
 	scores *game.GameScores,
-	gameOverChan chan bool,
+	exitChan chan bool,
 ) {
 	scene := make([]string, *MaxY)
 	for i := range scene {

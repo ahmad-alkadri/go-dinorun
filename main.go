@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
 
@@ -21,6 +22,7 @@ func main() {
 	defer func() {
 		_ = keyboard.Close()
 	}()
+
 	var (
 		MaxX, MaxY          int           = 70, 18
 		delayCactus         int           = 350
@@ -32,7 +34,6 @@ func main() {
 		delayBetweenEnemies int           = 20
 		jumpChan            chan bool     = make(chan bool)
 		exitChan            chan bool     = make(chan bool)
-		gameOverChan        chan bool     = make(chan bool)
 		dino                sprites.SpriteDino
 		cactuses            sprites.SpriteCactuses
 		pteranodons         sprites.SpritePteranodons
@@ -42,18 +43,27 @@ func main() {
 		frameDist           int          = 100
 		scores              game.GameScores
 		mu                  sync.Mutex
+		gameOverScore       int
 	)
+
+	// Set up the deferred end sequence
+	defer func() {
+		scores.Stop()
+		gameOverScore = scores.Print()
+		game.HandleGameOver(gameOverScore)
+		os.Exit(0)
+	}()
 
 	dino.Init(30)
 	ground.Init(&MaxX)
 	scores.Init()
 
-	go game.HandleInput(jumpChan, exitChan, gameOverChan)
+	go game.HandleInput(jumpChan, exitChan)
 
-loop:
 	for {
 		select {
 		case <-exitChan:
+			gameOverScore = scores.Print()
 			return
 		case <-jumpChan:
 			if spriteDinoY == baseY {
@@ -64,17 +74,16 @@ loop:
 					spriteDinoY -= displacements[i]
 					scenes.RenderGame(&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
 						&dino, &ground, &cactuses, &pteranodons,
-						&scores, gameOverChan)
+						&scores, exitChan)
 					clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 						&dino, &cactuses, &pteranodons)
 					if clash {
-						scores.Stop()
-						break loop
+						gameOverScore = scores.Print()
+						return
 					}
 					cactuses.Update()
 					pteranodons.Update()
 					frameDist += 1
-					// Time sleep before next frame
 					time.Sleep(gameSpeed * time.Millisecond)
 				}
 			}
@@ -87,7 +96,6 @@ loop:
 				frameDist = 0
 			}
 			mu.Unlock()
-			// Reset ticker
 			spawnCactusTicker.Reset(time.Duration(rand.Intn(1000)+delayCactus) * time.Millisecond)
 		case <-spawnPteraTicker.C:
 			mu.Lock()
@@ -98,28 +106,22 @@ loop:
 				frameDist = 0
 			}
 			mu.Unlock()
-			// Reset ticker
 			spawnPteraTicker.Reset(time.Duration(rand.Intn(1000)+delayPteranodon) * time.Millisecond)
 		default:
 			scenes.RenderGame(
 				&MaxX, &MaxY, &spriteDinoY, &groundSpeed,
 				&dino, &ground, &cactuses, &pteranodons,
-				&scores, gameOverChan)
+				&scores, exitChan)
 			clash := scenes.AreClashing(&MaxY, &spriteDinoY,
 				&dino, &cactuses, &pteranodons)
 			if clash {
-				scores.Stop()
-				break loop
+				gameOverScore = scores.Print()
+				return
 			}
 			cactuses.Update()
 			pteranodons.Update()
 			frameDist += 1
-			// Time sleep before next frame
 			time.Sleep(gameSpeed * time.Millisecond)
 		}
 	}
-
-	go func() {
-		gameOverChan <- true
-	}()
 }
