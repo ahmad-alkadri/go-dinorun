@@ -42,7 +42,8 @@ func RenderGame(
 
 	// Terminal screen update
 	var output strings.Builder
-	output.WriteString("\033[H\033[2J\033[3J") // Clear the screen
+	// Using PowerShell-friendly clear screen approach
+	output.WriteString("\u001B[2J\u001B[H") // Clear screen and move cursor to home position
 	output.WriteString(fmt.Sprintf("Score: %d\n", scores.Print()))
 	for _, line := range scene {
 		output.WriteString(line + "\n")
