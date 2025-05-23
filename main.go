@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"os"
 	"sync"
 	"time"
 
@@ -19,9 +18,6 @@ func main() {
 		fmt.Println("Failed to open keyboard:", err)
 		return
 	}
-	defer func() {
-		_ = keyboard.Close()
-	}()
 
 	var (
 		MaxX, MaxY          int           = 70, 18
@@ -51,7 +47,7 @@ func main() {
 		scores.Stop()
 		gameOverScore = scores.Print()
 		game.HandleGameOver(gameOverScore)
-		os.Exit(0)
+		_ = keyboard.Close()
 	}()
 
 	dino.Init(30)

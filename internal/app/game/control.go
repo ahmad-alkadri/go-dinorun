@@ -49,6 +49,7 @@ func HandleGameOver(score int) {
 					fmt.Printf("%d. %-20s %d\n", i+1, score.Name, score.Score)
 				}
 				fmt.Println("--------------------")
+				fmt.Println("Press any key to exit...")
 				return
 			}
 		}
