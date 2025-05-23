@@ -21,11 +21,23 @@ const (
 
 // GetHighScoreFilePath returns the path to the high scores file
 func GetHighScoreFilePath() string {
-	homeDir, err := os.UserHomeDir()
+	configDir, err := os.UserConfigDir()
 	if err != nil {
-		homeDir = "."
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			configDir = "."
+		} else {
+			configDir = homeDir
+		}
 	}
-	return filepath.Join(homeDir, ".go-dinorun-scores")
+
+	dirPath := filepath.Join(configDir, "go-dinorun")
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		// If directory creation fails, fallback to current directory
+		dirPath = "."
+	}
+
+	return filepath.Join(dirPath, "highscores.json")
 }
 
 // LoadHighScores loads high scores from file
