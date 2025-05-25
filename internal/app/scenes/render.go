@@ -15,7 +15,7 @@ func RenderGame(
 	cactuses *sprites.SpriteCactuses,
 	pteranodons *sprites.SpritePteranodons,
 	scores *game.GameScores,
-	gameOverChan chan bool,
+	exitChan chan bool,
 ) {
 	scene := make([]string, *MaxY)
 	for i := range scene {
@@ -39,10 +39,12 @@ func RenderGame(
 		pteraXoffset := ptera.Xoffset
 		printSprite(pteraXoffset, *MaxY-1, ptera.Render(), scene)
 	}
-
-	// Terminal screen update
+	// Terminal screen update with enhanced buffer control
 	var output strings.Builder
-	output.WriteString("\033[H\033[2J\033[3J") // Clear the screen
+	output.WriteString("\u001B[?1049h") // Enable alternate screen buffer
+	output.WriteString("\u001B[?25l")   // Hide cursor
+	output.WriteString("\u001B[2J")     // Clear screen
+	output.WriteString("\u001B[H")      // Move cursor to home position
 	output.WriteString(fmt.Sprintf("Score: %d\n", scores.Print()))
 	for _, line := range scene {
 		output.WriteString(line + "\n")
@@ -75,4 +77,56 @@ func AreClashing(
 		}
 	}
 	return false
+}
+
+// RenderFinalFrame renders the last frame of the game with the game over message
+// while maintaining the alternate buffer to prevent scrollback
+func RenderFinalFrame(scene []string, score int) {
+	var output strings.Builder
+	// Stay in alternate buffer, just clear and redraw
+	output.WriteString("\u001B[2J")   // Clear screen
+	output.WriteString("\u001B[H")    // Move cursor to home position
+	output.WriteString("\u001B[?25h") // Show cursor
+
+	// Print the final scene
+	output.WriteString(fmt.Sprintf("Score: %d\n", score))
+	for _, line := range scene {
+		output.WriteString(line + "\n")
+	}
+
+	// Print game over message below the frame
+	output.WriteString("\nGame Over!\n")
+	output.WriteString("Press any key to exit...")
+	fmt.Print(output.String())
+}
+
+// RenderFinalScene creates the final scene with all game elements in their last positions
+func RenderFinalScene(maxX, maxY, spriteDinoY, groundSpeed int,
+	dino *sprites.SpriteDino,
+	ground *sprites.SpriteGround,
+	cactuses *sprites.SpriteCactuses,
+	pteranodons *sprites.SpritePteranodons) []string {
+
+	finalScene := make([]string, maxY)
+	for i := range finalScene {
+		finalScene[i] = strings.Repeat(" ", maxX)
+	}
+
+	// Print the dino sprite
+	printSprite(5, spriteDinoY, dino.Render(), finalScene)
+
+	// Print the ground as sprite
+	printSprite(0, maxY-1, ground.Render(groundSpeed), finalScene)
+
+	// Print the cactuses
+	for _, cactus := range cactuses.Group {
+		printSprite(cactus.Xoffset, maxY-1, cactus.Render(), finalScene)
+	}
+
+	// Print the pteranodons
+	for _, ptera := range pteranodons.Group {
+		printSprite(ptera.Xoffset, maxY-1, ptera.Render(), finalScene)
+	}
+
+	return finalScene
 }
