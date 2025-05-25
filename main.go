@@ -60,6 +60,9 @@ func main() {
 		select {
 		case <-exitChan:
 			gameOverScore = scores.Print()
+			finalScene := scenes.RenderFinalScene(MaxX, MaxY, spriteDinoY, groundSpeed,
+				&dino, &ground, &cactuses, &pteranodons)
+			scenes.RenderFinalFrame(finalScene, gameOverScore)
 			return
 		case <-jumpChan:
 			if spriteDinoY == baseY {
@@ -75,6 +78,9 @@ func main() {
 						&dino, &cactuses, &pteranodons)
 					if clash {
 						gameOverScore = scores.Print()
+						finalScene := scenes.RenderFinalScene(MaxX, MaxY, spriteDinoY, groundSpeed,
+							&dino, &ground, &cactuses, &pteranodons)
+						scenes.RenderFinalFrame(finalScene, gameOverScore)
 						return
 					}
 					cactuses.Update()
@@ -112,6 +118,9 @@ func main() {
 				&dino, &cactuses, &pteranodons)
 			if clash {
 				gameOverScore = scores.Print()
+				finalScene := scenes.RenderFinalScene(MaxX, MaxY, spriteDinoY, groundSpeed,
+					&dino, &ground, &cactuses, &pteranodons)
+				scenes.RenderFinalFrame(finalScene, gameOverScore)
 				return
 			}
 			cactuses.Update()
