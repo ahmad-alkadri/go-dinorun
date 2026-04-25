@@ -41,10 +41,10 @@ func RenderGame(
 	}
 	// Terminal screen update with enhanced buffer control
 	var output strings.Builder
-	output.WriteString("\u001B[?1049h") // Enable alternate screen buffer
-	output.WriteString("\u001B[?25l")   // Hide cursor
-	output.WriteString("\u001B[2J")     // Clear screen
-	output.WriteString("\u001B[H")      // Move cursor to home position
+	output.WriteString("[?1049h") // Enable alternate screen buffer
+	output.WriteString("[?25l")   // Hide cursor
+	output.WriteString("[2J")     // Clear screen
+	output.WriteString("[H")      // Move cursor to home position
 	output.WriteString(fmt.Sprintf("Score: %d\n", scores.Print()))
 	for _, line := range scene {
 		output.WriteString(line + "\n")
@@ -84,15 +84,15 @@ func AreClashing(
 func RenderFinalFrame(scene []string, score int) {
 	var output strings.Builder
 	// Stay in alternate buffer, just clear and redraw
-	output.WriteString("\u001B[2J")   // Clear screen
-	output.WriteString("\u001B[H")    // Move cursor to home position
-	output.WriteString("\u001B[?25h") // Show cursor
+	output.WriteString("[2J") // Clear screen
+	output.WriteString("[H")  // Move cursor to home position
 
 	// Print the final scene
 	output.WriteString(fmt.Sprintf("Score: %d\n", score))
 	for _, line := range scene {
 		output.WriteString(line + "\n")
 	}
+	output.WriteString("\nGame Over! Press SPACE to play again, or Ctrl+C to quit.\n")
 
 	fmt.Print(output.String())
 }
